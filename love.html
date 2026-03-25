@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>爱心告白</title>
+    <style>
+        body{
+            background: linear-gradient(120deg, #fff8f8, #ffe6ea);
+            text-align:center;
+            font-family:微软雅黑;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        canvas{
+            margin-top:20px;
+            filter: drop-shadow(0 2px 8px rgba(255, 182, 193, 0.3));
+        }
+        #bg-canvas{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+        }
+        #main-canvas{
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<canvas id="main-canvas" width="700" height="550"></canvas>
+
+<script>
+// ========== 背景画布初始化 ==========
+let bgCanvas = document.getElementById("bg-canvas");
+let bgCtx = bgCanvas.getContext("2d");
+bgCanvas.width = window.innerWidth;
+bgCanvas.height = window.innerHeight;
+
+// ========== 背景小爱心（统一标准心形，仅大小不同） ==========
+let smallHearts = [];
+const heartCount = Math.floor(window.innerWidth / 18); // 数量适配屏幕
+
+// 小爱心类（移除宽扁随机缩放，仅保留大小差异）
+class SmallHeart {
+    constructor() {
+        this.x = Math.random() * bgCanvas.width;
+        this.y = Math.random() * bgCanvas.height;
+        this.size = Math.random() * 8 + 3; // 仅大小不同：3~11px
+        this.speed = Math.random() * 0.4 + 0.1; // 慢下落速度
+        // 深粉色系（比主爱心#e62e4d浅，比之前深）
+        const colorList = ['#f06c85', '#f48b9e', '#f8a7b3'];
+        this.color = colorList[Math.floor(Math.random() * colorList.length)];
+        this.alpha = Math.random() * 0.5 + 0.3; // 透明度0.3~0.8
+    }
+
+    draw() {
+        bgCtx.save();
+        bgCtx.globalAlpha = this.alpha;
+        bgCtx.translate(this.x, this.y);
+        // 核心修改：统一等比缩放，仅大小不同，保证所有爱心外形一致
+        bgCtx.scale(this.size/10, this.size/10);
+        bgCtx.beginPath();
+        bgCtx.fillStyle = this.color;
+        bgCtx.moveTo(0, 0);
+        bgCtx.bezierCurveTo(-5, -5, -10, 5, 0, 15);
+        bgCtx.bezierCurveTo(10, 5, 5, -5, 0, 0);
+        bgCtx.fill();
+        bgCtx.restore();
+    }
+
+    update() {
+        this.y += this.speed;
+        if (this.y > bgCanvas.height + 20) {
+            this.y = -20;
+            this.x = Math.random() * bgCanvas.width;
+        }
+    }
+}
+
+// 初始化背景小爱心
+for (let i = 0; i < heartCount; i++) {
+    smallHearts.push(new SmallHeart());
+}
+
+// ========== 背景动画循环 ==========
+function bgAnimate() {
+    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+    
+    // 更新绘制小爱心
+    smallHearts.forEach(heart => {
+        heart.update();
+        heart.draw();
+    });
+
+    requestAnimationFrame(bgAnimate);
+}
+
+// ========== 主爱心逻辑（保留所有原有效果） ==========
+let mainCanvas = document.getElementById("main-canvas");
+let mainCtx = mainCanvas.getContext("2d");
+let scale = 1;        
+let scaleSpeed = 0.00033; // 3倍慢的缩放速度
+let scaleDir = 1;     
+let textAlpha = 0;    
+let alphaSpeed = 0.002;
+
+function drawMainHeart() {
+    mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+    
+    mainCtx.save();
+    mainCtx.translate(350, 310);
+    mainCtx.scale(scale, scale);
+    mainCtx.translate(-350, -310);
+
+    // 外层浅橙红轮廓
+    mainCtx.beginPath();
+    mainCtx.strokeStyle = "#f8b5a8";
+    mainCtx.lineWidth = 15;
+    mainCtx.moveTo(350, 190);
+    mainCtx.bezierCurveTo(180, 80, 80, 220, 350, 430);
+    mainCtx.bezierCurveTo(620, 220, 520, 80, 350, 190);
+    mainCtx.stroke();
+
+    // 内层白色细轮廓
+    mainCtx.beginPath();
+    mainCtx.strokeStyle = "#ffffff";
+    mainCtx.lineWidth = 8;
+    mainCtx.moveTo(350, 190);
+    mainCtx.bezierCurveTo(180, 80, 80, 220, 350, 430);
+    mainCtx.bezierCurveTo(620, 220, 520, 80, 350, 190);
+    mainCtx.stroke();
+
+    // 爱心主体填充
+    mainCtx.beginPath();
+    mainCtx.fillStyle = "#e62e4d";
+    mainCtx.moveTo(350, 190);
+    mainCtx.bezierCurveTo(180, 80, 80, 220, 350, 430);
+    mainCtx.bezierCurveTo(620, 220, 520, 80, 350, 190);
+    mainCtx.fill();
+
+    mainCtx.restore();
+
+    // 爱心中间名字
+    mainCtx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
+    mainCtx.font = `bold ${38 * scale}px 微软雅黑`;
+    mainCtx.textAlign = "center";
+    mainCtx.fillText("刘慧情＆方星宇", 350, 280);
+
+    // 爱心下方告白文字
+    mainCtx.fillStyle = `rgba(230, 46, 77, ${textAlpha})`;
+    mainCtx.font = `bold ${34 * scale}px 微软雅黑`;
+    mainCtx.textAlign = "center";
+    mainCtx.fillText("爱你一辈子，我的可爱女孩", 350, 485);
+}
+
+function mainAnimate() {
+    scale += scaleSpeed * scaleDir;
+    if (scale >= 1.02) scaleDir = -1;
+    if (scale <= 0.98) scaleDir = 1;
+
+    if (textAlpha < 1) textAlpha += alphaSpeed;
+
+    drawMainHeart();
+    requestAnimationFrame(mainAnimate);
+}
+
+// ========== 启动动画 + 窗口适配 ==========
+bgAnimate();
+mainAnimate();
+
+window.addEventListener("resize", () => {
+    bgCanvas.width = window.innerWidth;
+    bgCanvas.height = window.innerHeight;
+    
+    // 重新生成小爱心
+    smallHearts = [];
+    const newHeartCount = Math.floor(window.innerWidth / 18);
+    for (let i = 0; i < newHeartCount; i++) {
+        smallHearts.push(new SmallHeart());
+    }
+});
+</script>
+</body>
+</html>
